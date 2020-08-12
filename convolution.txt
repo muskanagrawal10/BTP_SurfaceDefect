@@ -1,0 +1,65 @@
+function result = eeconv2(kernel,targetMat)
+%----------------------------------
+%Part One: create the padded matrix
+%----------------------------------
+%determine the dimensions of the two matrices
+[m1,n1] = size(kernel);
+[m2,n2] = size(targetMat);
+%determine how much padding is necessary
+extram = (m1 - 1); %this is how many rows will need to be added.
+extran = (n1 - 1); %this is how many columns will need to be added.
+%initialize the padded matrix
+padTarget = zeros(m2+extram,n2+extran);
+%fill the middle of padTarget with targetMat
+padTarget(1+extram/2:extram/2+m2,1+extran/2:extran/2+n2) = targetMat;
+%fill the repetitions on each side in
+%------------------------------------
+for i = 1:extram/2
+        
+        %top rows
+        padTarget(i,1+extran/2:extran/2+n2) = padTarget(1+extram/2,1+extran/2:extran/2+n2);
+        %bottom rows
+        padTarget(i+extram/2+m2,1+extran/2:extran/2+n2) = padTarget(extram/2+m2,1+extran/2:extran/2+n2);
+        %left columns
+        padTarget(1+extram/2:extram/2+m2,i) = padTarget(1+extram/2:extram/2+m2,1+extran/2);
+        %right columns
+        padTarget(1+extram/2:extram/2+m2,i+extran/2+n2) = padTarget(1+extram/2:extram/2+m2,extran/2+n2);
+end
+%fill the corners of the padded matrix
+%-------------------------------------
+%topleft
+padTarget(1:extram/2,1:extran/2)=padTarget(extram/2,1+extran/2);
+%bottomleft
+padTarget(extram/2+m2+1:extram+m2,1:extran/2)=padTarget(m2+extram/2,1+extran/2);
+%topright
+padTarget(1:extram/2,1+n2+extran/2:n2+extran)=padTarget(1+extram/2,n2+extran/2);
+%bottomright
+padTarget(extram/2+m2+1:extram+m2,1+n2+extran/2:n2+extran)=padTarget(m2+extram/2,n2+extran/2);
+%---------------------------------
+%Part Two: perform the convolution
+%---------------------------------
+%flip the rows and columns of the kernel
+%---------------------------------------
+flipconvMat = zeros(m1,n1); %preallocate flipconvMat
+%flip
+for i = 1:m1
+    for j = 1:n1
+        flipconvMat(i,j) = kernel(1+m1-i,1+n1-j);
+    end
+end
+%now element by element perform the convolution
+%outer loop selects which pixel in padTarget we are centering on at the moment
+result = zeros(m2,n2); %preallocate result
+for i = 1+extram/2:extram/2+m2
+    for j = 1+extran/2:extran/2+n2
+   
+        convSum = 0; %the running total
+        for m = 1:m1
+            for n = 1:n1
+                convSum = convSum+flipconvMat(m,n)*padTarget(i-extram/2-1+m,j-extran/2-1+n);
+            end
+        end
+        result(i-extram/2,j-extran/2)=convSum;
+    end
+end
+end
